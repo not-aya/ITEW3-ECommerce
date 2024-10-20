@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UCommerce</title>
+    <title>Supreme</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css">
@@ -19,7 +19,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <img src="Images/logo.png" class="logo">
+        <img style="width: 100px; cursor: pointer;" src="Images/logo.jpg" class="logo">
         <div class="container-fluid">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -27,29 +27,31 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a style="color: #02542D;" class="nav-link active" aria-current="page" href="#">Products</a>
+                        <a style="color: #CE1126;" class="nav-link active" aria-current="page" href="#">Products</a>
                     </li>
                     <li class="nav-item">
-                        <a style="color: #02542D;" class="nav-link active" aria-current="page" href="#">About Us</a>
+                        <a style="color: #CE1126;" class="nav-link active" aria-current="page" href="#">About Us</a>
                     </li>
                     <li class="nav-item">
-                        <a style="color: #02542D;" class="nav-link active" aria-current="page" href="#">Contact Us</a>
+                        <a style="color: #CE1126;" class="nav-link active" aria-current="page" href="#">Contact Us</a>
                     </li>
                 </ul>
                 <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#loginModal">Sign in</button>
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signupModal">Register</button>
+
+                    <button type="button" class="btn btn-outline-danger" style="white-space: nowrap; padding: 10px 20px; margin-right: 10px;" data-bs-toggle="modal" data-bs-target="#loginModal">Sign in</button>
+                    <button type="button" class="btn btn-danger" style="padding: 10px 20px;" data-bs-toggle="modal" data-bs-target="#signupModal">Register</button>
+
+
                 </form>
             </div>
         </div>
     </nav>
     <div class="landing">
-        <h1>
-            UCOMMERCE <br>
-            <small class="text-body-secondary">Become a Seller Now</small>
+        <h1 style="color: #CE1126; line-height: 1;" >
+            SUPREME <br>
+            <small style="color: black;">Jump Higher Act Cooler</small>
         </h1>
-        <button style="font-size: 20px; padding: 15px 30px; width: auto; height: auto;" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signupModal">Register Now</button>
+        <button style="font-size: 20px; padding: 15px 30px; width: auto; height: auto;" type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#signupModal">Register Now</button>
         
         <!-- SIGN-IN MODAL -->
         <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
@@ -75,7 +77,7 @@
                                 <input type="checkbox" name="remember" id="remember" 
                                     <?php echo isset($_COOKIE['email']) ? 'checked' : ''; ?>>
                             </div>
-                            <button type="submit" class="btn btn-primary">Sign In</button>
+                            <button type="submit" class="btn btn-danger">Sign In</button>
                         </form>
                     </div>
                 </div>
@@ -103,7 +105,8 @@
                                 <label for="signup-password" class="col-form-label">Password:</label>
                                 <input type="password" class="form-control" id="signup-password" name="password" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Register</button>
+                            <button type="submit" class="btn btn-danger" style="margin-top: 20px;">Register</button>
+
                         </form>
                     </div>
                 </div>
