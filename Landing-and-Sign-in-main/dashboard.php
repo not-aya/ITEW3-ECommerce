@@ -31,6 +31,7 @@ function fetchProducts($conn) {
 }
 
 $products = fetchProducts($conn);
+$duplicate_error = false; // Flag for duplicate error
 
 // Handle form submission for adding new products
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_product'])) {
@@ -48,15 +49,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_product'])) {
     
     if ($stmt) {
         $stmt->bind_param("ssssiid", $productname, $product_code, $productcategory, $description, $quantity, $price, $availability);
-        if ($stmt->execute()) {
+        try {
+            $stmt->execute();
             // Fetch updated product list
             $products = fetchProducts($conn);
-        } else {
+        } catch (mysqli_sql_exception $e) {
             // Handle duplicate entry error
-            if ($stmt->errno === 1062) { // Duplicate entry
-                echo "<script>alert('Error: Duplicate product code \"$product_code\" detected!');</script>";
+            if ($e->getCode() === 1062) { // Duplicate entry
+                $duplicate_error = true; // Set the duplicate error flag
             } else {
-                echo "<script>alert('Error adding product: " . $stmt->error . "');</script>";
+                echo "<script>alert('Error adding product: " . $e->getMessage() . "');</script>";
             }
         }
         $stmt->close();
@@ -71,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_product'])) {
     $productname = trim($_POST['productname']);
     $product_code = trim($_POST['product_code']);
     $productcategory = trim($_POST['productcategory']);
-    $description = trim($_POST['description']);
+    $description = trim($_POST['description']); // This must be the same name as the textarea's name attribute
     $quantity = (int)$_POST['quantity'];
     $price = (float)$_POST['price'];
     $availability = isset($_POST['availability']) ? 1 : 0; // Boolean value for availability
@@ -185,76 +187,146 @@ $conn->close();
         </form>
 
         <!-- Displaying the Product List -->
-        <br><hr><br><br>
+        <br><hr><br>
         <h4>Product List</h4>
-        <div class="row row-cols-1 row-cols-md-2 g-4">
-            <?php foreach ($products as $product): ?>
-            <div class="col">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title"><?php echo htmlspecialchars($product['productname']); ?></h5>
-                        <p class="card-text"><strong>Product Code:</strong>                         <?php echo htmlspecialchars($product['product_code']); ?></p>
-                        <p class="card-text"><strong>Category:</strong> <?php echo htmlspecialchars($product['productcategory']); ?></p>
-                        <p class="card-text"><strong>Description:</strong> <?php echo htmlspecialchars($product['description']); ?></p>
-                        <p class="card-text"><strong>Quantity:</strong> <?php echo htmlspecialchars($product['quantity']); ?></p>
-                        <p class="card-text"><strong>Price:</strong> ₱<?php echo htmlspecialchars(number_format($product['price'], 2)); ?></p>
-                        <p class="card-text"><strong>Available:</strong> <?php echo $product['availability'] ? 'Yes' : 'No'; ?></p>
-                    </div>
-                    <div class="card-footer">
-                        <a href="dashboard.php?delete=<?php echo $product['product_id']; ?>" class="btn btn-danger">Delete</a>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateModal<?php echo $product['product_id']; ?>"> Edit</button>
-                    </div>
-                </div>
-            </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Product Code</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($products as $product): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($product['productname']); ?></td>
+                    <td><?php echo htmlspecialchars($product['product_code']); ?></td>
+                    <td><?php echo htmlspecialchars($product['productcategory']); ?></td>
+                    <td><?php echo htmlspecialchars($product['description']); ?></td>
+                    <td><?php echo htmlspecialchars($product['quantity']); ?></td>
+                    <td><?php echo htmlspecialchars($product['price']); ?></td>
+                    <td><?php echo htmlspecialchars($product['availability']) ? 'Yes' : 'No'; ?></td>
+                    <td>
+                        <a href="javascript:void(0)" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateProductModal" data-id="<?php echo htmlspecialchars($product['product_id']); ?>" data-name="<?php echo htmlspecialchars($product['productname']); ?>" data-code="<?php echo htmlspecialchars($product['product_code']); ?>" data-category="<?php echo htmlspecialchars($product['productcategory']); ?>" data-description="<?php echo htmlspecialchars($product['description']); ?>" data-quantity="<?php echo htmlspecialchars($product['quantity']); ?>" data-price="<?php echo htmlspecialchars($product['price']); ?>" data-availability="<?php echo htmlspecialchars($product['availability']); ?>">Edit</a>
+                        <a href="?delete=<?php echo htmlspecialchars($product['product_id']); ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
 
-            <!-- For updating the product  -->
-            <div class="modal fade" id="updateModal<?php echo $product['product_id']; ?>" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="updateModalLabel">Update Product</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form method="POST">
-                                <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
-                                <div class="mb-3">
-                                    <label for="productname" class="form-label">Product Name</label>
-                                    <input type="text" class="form-control" name="productname" value="<?php echo htmlspecialchars($product['productname']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="product_code" class="form-label">Product Code</label>
-                                    <input type="text" class="form-control" name="product_code" value="<?php echo htmlspecialchars($product['product_code']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="productcategory" class="form-label">Product Category</label>
-                                    <input type="text" class="form-control" name="productcategory" value="<?php echo htmlspecialchars($product['productcategory']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="description" class="form-label">Product Description</label>
-                                    <textarea class="form-control" name="description" required><?php echo htmlspecialchars($product['description']); ?></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="quantity" class="form-label">Quantity</label>
-                                    <input type="number" class="form-control" name="quantity" value="<?php echo htmlspecialchars($product['quantity']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="price" class="form-label">Price</label>
-                                    <input type="number" step="0.01" class="form-control" name="price" value="<?php echo htmlspecialchars($product['price']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="availability" class="form-label">Available</label>
-                                    <input type="checkbox" name="availability" <?php echo $product['availability'] ? 'checked' : ''; ?>>
-                                </div>
-                                <button type="submit" name="update_product" class="btn btn-primary">Update Product</button>
-                            </form>
-                        </div>
+        <!-- Update Product Modal -->
+   
+        <div class="modal fade" id="updateProductModal" tabindex="-1" aria-labelledby="updateProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateProductModalLabel">Update Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST">
+                            <input type="hidden" name="product_id" id="product_id">
+                            <div class="mb-3">
+                                <label for="update_productname" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" name="productname" id="update_productname" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_product_code" class="form-label">Product Code</label>
+                                <input type="text" class="form-control" name="product_code" id="update_product_code" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_productcategory" class="form-label">Product Category</label>
+                                <input type="text" class="form-control" name="productcategory" id="update_productcategory" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_description" class="form-label">Product Description</label>
+                                <textarea class="form-control" name="description" id="update_description" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" name="quantity" id="update_quantity" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_price" class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" name="price" id="update_price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update_availability" class="form-label">Available</label>
+                                <input type="checkbox" name="availability" id="update_availability">
+                            </div>
+                            <button type="submit" name="update_product" class="btn btn-warning">Update Product</button>
+                        </form>
                     </div>
                 </div>
             </div>
-            <?php endforeach; ?>
         </div>
+
+        <!-- Duplicate Entry Error Modal -->
+        <div class="modal fade" id="duplicateErrorModal" tabindex="-1" aria-labelledby="duplicateErrorModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="duplicateErrorModalLabel">Duplicate Entry</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>A product with this code already exists. Please use a different code.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trigger the duplicate error modal if there is a duplicate entry -->
+        <?php if ($duplicate_error): ?>
+            <script>
+                const duplicateErrorModal = new bootstrap.Modal(document.getElementById('duplicateErrorModal'));
+                duplicateErrorModal.show();
+            </script>
+        <?php endif; ?>
     </div>
+
+    <script>
+        // Populate update modal with data
+        const updateProductModal = document.getElementById('updateProductModal');
+        updateProductModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget; // Button that triggered the modal
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        const code = button.getAttribute('data-code');
+        const category = button.getAttribute('data-category');
+        const description = button.getAttribute('data-description');
+        const quantity = button.getAttribute('data-quantity');
+        const price = button.getAttribute('data-price');
+        const availability = button.getAttribute('data-availability');
+
+        const modalId = updateProductModal.querySelector('#product_id');
+        const modalName = updateProductModal.querySelector('#update_productname');
+        const modalCode = updateProductModal.querySelector('#update_product_code');
+        const modalCategory = updateProductModal.querySelector('#update_productcategory');
+        const modalDescription = updateProductModal.querySelector('#update_description');
+        const modalQuantity = updateProductModal.querySelector('#update_quantity');
+        const modalPrice = updateProductModal.querySelector('#update_price');
+        const modalAvailability = updateProductModal.querySelector('#update_availability');
+
+        modalId.value = id;
+        modalName.value = name;
+        modalCode.value = code;
+        modalCategory.value = category;
+        modalDescription.value = description; // Ensure this line is correct
+        modalQuantity.value = quantity;
+        modalPrice.value = price;
+        modalAvailability.checked = availability == 1;
+    });
+    </script>
 </body>
 </html>
-
